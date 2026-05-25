@@ -26,7 +26,7 @@ export class BrowserMediumClient {
 
   async initialize(): Promise<void> {
     this.browser = await chromium.launch({ 
-      headless: false, // Keep visible for login
+      headless: true, // Changed for remote deployment on Render
       slowMo: 100, // Slow down for reliability
       args: [
         '--no-first-run',
@@ -48,6 +48,16 @@ export class BrowserMediumClient {
         'Accept-Language': 'en-US,en;q=0.9'
       }
     };
+
+    // Support loading session from environment variable
+    if (process.env.MEDIUM_SESSION_JSON) {
+      try {
+        writeFileSync(this.sessionPath, process.env.MEDIUM_SESSION_JSON);
+        console.error('💾 Saved session from environment variable');
+      } catch (error) {
+        console.error('Failed to save session from env:', error);
+      }
+    }
 
     if (existsSync(this.sessionPath)) {
       try {

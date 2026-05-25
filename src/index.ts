@@ -1,6 +1,8 @@
 import { config } from 'dotenv';
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import express from "express";
+import cors from "cors";
 import { z } from "zod";
 import { BrowserMediumClient } from './browser-client';
 
@@ -203,9 +205,31 @@ class MediumMcpServer {
       await this.mediumClient.initialize();
       console.error("🌐 Browser Medium client initialized");
 
-      const transport = new StdioServerTransport();
-      await this.server.connect(transport);
-      console.error("🚀 Medium MCP Server (Browser-based) Initialized");
+      const app = express();
+      app.use(cors());
+      
+      let transport: SSEServerTransport | null = null;
+      
+      app.get("/sse", async (req, res) => {
+        transport = new SSEServerTransport("/message", res);
+        await this.server.connect(transport);
+        console.error("🟢 SSE Connection established");
+      });
+
+      app.post("/message", async (req, res) => {
+        if (!transport) {
+          res.status(503).send("Server not connected");
+          return;
+        }
+        await transport.handlePostMessage(req, res);
+      });
+
+      const port = process.env.PORT || 3000;
+      app.listen(port, () => {
+        console.error(`🚀 Medium MCP Server (SSE) running on port ${port}`);
+        console.error(`🔌 SSE Endpoint: http://localhost:${port}/sse`);
+      });
+
     } catch (error) {
       console.error("Failed to start server:", error);
       throw error;
