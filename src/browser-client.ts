@@ -29,6 +29,8 @@ export class BrowserMediumClient {
       headless: process.env.RENDER === 'true' || process.env.HEADLESS === 'true', // Visible locally for login, headless on Render
       slowMo: 100, // Slow down for reliability
       args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
         '--no-first-run',
         '--no-default-browser-check',
         '--disable-blink-features=AutomationControlled',
