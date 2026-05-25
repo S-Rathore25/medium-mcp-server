@@ -26,7 +26,7 @@ export class BrowserMediumClient {
 
   async initialize(): Promise<void> {
     this.browser = await chromium.launch({ 
-      headless: true, // Changed for remote deployment on Render
+      headless: process.env.RENDER === 'true' || process.env.HEADLESS === 'true', // Visible locally for login, headless on Render
       slowMo: 100, // Slow down for reliability
       args: [
         '--no-first-run',
@@ -151,7 +151,13 @@ export class BrowserMediumClient {
       
       // Wait for successful login (user button appears)
       try {
-        await this.page.waitForSelector('[data-testid="headerUserButton"], .avatar, [data-testid="user-menu"]', { timeout: 300000 }); // 5 minutes
+        console.error('====================================================');
+        console.error('👉 ONCE YOU ARE LOGGED IN:');
+        console.error('👉 Type this exact URL in the browser address bar:');
+        console.error('👉 https://medium.com/?saved=1');
+        console.error('👉 And press Enter. This will trigger the save!');
+        console.error('====================================================');
+        await this.page.waitForFunction('window.location.href.includes("saved=1")', { timeout: 600000 }); // 10 minutes
         console.error('✅ Login successful!');
         await this.saveSession();
         return true;
